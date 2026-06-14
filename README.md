@@ -59,7 +59,12 @@ The defaults in `.env.example` already point at the demo site with the correct c
 
 ## Running tests
 
+> Make sure the virtual environment is active first (`source venv/bin/activate`). You'll see `(venv)` in your prompt. pytest is installed inside it, not globally.
+
 ```bash
+# activate venv (do this once per terminal session)
+source venv/bin/activate
+
 # run everything
 pytest
 
