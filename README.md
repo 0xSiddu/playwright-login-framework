@@ -1,201 +1,144 @@
-# 🎭 playwright-login-framework
+# playwright-login-framework
 
-> A professional, production-quality **Playwright + pytest** automation framework
-> demonstrating a complete **Login flow** test suite — built with QA/SDET best practices.
+A login test suite built with Playwright (Python) and pytest. I built this to practice the Page Object Model pattern and put together something clean enough to show in a QA/SDET application.
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue?logo=python)](https://www.python.org/)
-[![Playwright](https://img.shields.io/badge/playwright-1.44-green?logo=playwright)](https://playwright.dev/python/)
-[![pytest](https://img.shields.io/badge/pytest-8.x-orange?logo=pytest)](https://docs.pytest.org/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
+It tests against [practicetestautomation.com](https://practicetestautomation.com/practice-test-login/) — a free public demo site, so you can clone and run everything without setting up a backend.
 
 ---
 
-## 📐 Architecture
+## Stack
+
+- Python 3.11+
+- [Playwright for Python](https://playwright.dev/python/)
+- pytest + pytest-html
+- python-dotenv
+- allure-pytest (optional, for a richer report UI)
+
+---
+
+## Project layout
 
 ```
 playwright-login-framework/
-├── tests/
-│   ├── conftest.py         # Fixtures: browser, context, page, login_page, logged_in_page
-│   └── test_login.py       # 9 named TCs + 5 parametrised variants (TC-001 → TC-010)
 ├── pages/
-│   ├── base_page.py        # BasePage: shared Playwright helpers + auto-logging
-│   └── login_page.py       # LoginPage POM: locators as @property, chainable actions
+│   ├── base_page.py      # shared helpers all pages inherit from
+│   └── login_page.py     # locators + actions for the login screen
+├── tests/
+│   ├── conftest.py       # fixtures and failure hooks
+│   └── test_login.py     # the actual test cases
 ├── utils/
-│   ├── config.py           # Typed Config dataclass loaded from .env
-│   └── helpers.py          # Screenshot, trace, logging, directory utilities
-├── reports/                # ← gitignored  (HTML report + pytest log + trace zips)
-├── screenshots/            # ← gitignored  (failure screenshots)
-├── .env.example            # Template for all supported environment variables
-├── pytest.ini              # Test discovery, markers, HTML report, CLI logging
-├── requirements.txt        # Pinned runtime + optional dev dependencies
-└── .gitignore
+│   ├── config.py         # reads .env and exposes a Config object
+│   └── helpers.py        # screenshot capture, logging, path utils
+├── reports/              # gitignored — HTML report lands here
+├── screenshots/          # gitignored — failure screenshots land here
+├── .env.example
+├── pytest.ini
+└── requirements.txt
 ```
 
 ---
 
-## 🚀 Quick Start
-
-### 1 — Clone & create a virtual environment
+## Getting started
 
 ```bash
-git clone https://github.com/YOUR_HANDLE/playwright-login-framework.git
+git clone https://github.com/0xSiddu/playwright-login-framework.git
 cd playwright-login-framework
 
 python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
-```
+source venv/bin/activate
 
-### 2 — Install dependencies
-
-```bash
 pip install -r requirements.txt
-playwright install chromium      # download Chromium browser binary
-```
+playwright install chromium
 
-### 3 — Configure environment
-
-```bash
 cp .env.example .env
-# Edit .env if you need to change BASE_URL or credentials
 ```
 
-### 4 — Run the tests
+The defaults in `.env.example` already point at the demo site with the correct credentials, so you don't need to change anything to get the tests running.
+
+---
+
+## Running tests
 
 ```bash
-# Default (headless, HTML report generated in reports/)
+# run everything
 pytest
 
-# Watch the browser — set HEADLESS=false in .env, or:
+# watch it run in a real browser window
 HEADLESS=false pytest
 
-# Single test class
+# just the happy-path tests
 pytest tests/test_login.py::TestLoginSuccess -v
 
-# Single test
-pytest tests/test_login.py::TestLoginFailure::test_wrong_password_shows_error -v
+# just the negative cases
+pytest tests/test_login.py::TestLoginFailure -v
 
-# Smoke tests only
-pytest -m smoke
-
-# Parallel execution (requires pytest-xdist)
+# run tests in parallel
 pytest -n auto
 
-# Allure report (requires Allure CLI installed)
+# allure report (needs allure CLI installed separately)
 pytest --alluredir=reports/allure-results
 allure serve reports/allure-results
 ```
 
----
-
-## 🧪 Test Cases
-
-| ID     | Class              | Scenario                                        | Expected Outcome           |
-|--------|--------------------|-------------------------------------------------|----------------------------|
-| TC-001 | `TestLoginSuccess` | Valid username + password                       | "Logged In Successfully"   |
-| TC-002 | `TestLoginSuccess` | Valid login → logout button visible             | Logout CTA is visible      |
-| TC-003 | `TestLoginSuccess` | Valid login → URL changes                       | URL differs from login URL |
-| TC-004 | `TestLoginSuccess` | Logout → redirects back to login page           | Username field visible     |
-| TC-005 | `TestLoginFailure` | Valid username + **wrong** password             | Error message shown        |
-| TC-006 | `TestLoginFailure` | **Invalid** username + valid password           | Error message shown        |
-| TC-007 | `TestLoginFailure` | **Empty** username + valid password             | Error message shown        |
-| TC-008 | `TestLoginFailure` | Valid username + **empty** password             | Error message shown        |
-| TC-009 | `TestLoginFailure` | Both fields **empty**                           | Error message shown        |
-| TC-010 | `TestLoginFailure` | 5× case/whitespace variants (parametrised)      | Login rejected each time   |
+After a run, open `reports/report.html` in a browser for the full HTML report.
 
 ---
 
-## 🏗️ Design Patterns & Principles
+## What's being tested
 
-### Page Object Model (POM)
-Locators live **only** in `pages/`. Tests never touch CSS selectors directly.
+**Happy path**
+- Valid credentials log in successfully
+- Logout button is visible after login
+- URL changes after a successful login
+- Logging out sends you back to the login page
 
-```python
-# ✅ Good — page object handles the selector
-login_page.login("student", "Password123")
+**Negative cases**
+- Wrong password shows an error
+- Non-existent username shows an error
+- Empty username field shows an error
+- Empty password field shows an error
+- Both fields empty shows an error
+- Credentials with wrong casing or extra whitespace are rejected (5 parametrised variants)
 
-# ❌ Bad — selector leaks into the test
-page.fill("#username", "student")
-```
+14 tests total.
 
-### Fixture hierarchy (scope pyramid)
+---
 
-```
-session  →  playwright_instance  →  browser
-function →  context  →  page  →  login_page  →  logged_in_page
-```
+## On failure
 
-Each function-scoped context is **completely isolated** (no shared cookies or storage).
+If a test fails, the `context` fixture automatically:
 
-### Auto-artefacts on failure
-The `context` fixture uses `pytest_runtest_makereport` to detect failures and automatically:
-- 📸 Captures a full-page **screenshot** → `screenshots/FAIL_<test>_<timestamp>.png`
-- 🔍 Exports a **Playwright trace** → `reports/trace_<test>_<timestamp>.zip`
+1. Takes a full-page screenshot → `screenshots/FAIL_<testname>_<timestamp>.png`
+2. Exports a Playwright trace → `reports/trace_<testname>_<timestamp>.zip`
 
-Open a trace with:
+To open a trace:
+
 ```bash
-playwright show-trace reports/trace_test_name_20240614.zip
+playwright show-trace reports/trace_<filename>.zip
 ```
 
----
-
-## ⚙️ Environment Variables
-
-| Variable           | Default                                                                | Description                        |
-|--------------------|------------------------------------------------------------------------|------------------------------------|
-| `ENV`              | `dev`                                                                  | Environment label (dev/staging)    |
-| `BASE_URL`         | `https://practicetestautomation.com/practice-test-login/`             | Login page URL                     |
-| `VALID_USERNAME`   | `student`                                                              | Username for happy-path tests      |
-| `VALID_PASSWORD`   | `Password123`                                                          | Password for happy-path tests      |
-| `HEADLESS`         | `true`                                                                 | Run browser headless               |
-| `SLOW_MO`          | `0`                                                                    | Delay (ms) between actions         |
-| `BROWSER_TIMEOUT`  | `30000`                                                                | Global element timeout (ms)        |
-| `SCREENSHOT_DIR`   | `screenshots`                                                          | Directory for failure screenshots  |
-| `REPORT_DIR`       | `reports`                                                              | Directory for HTML report + traces |
-| `TRACE_ON_FAILURE` | `true`                                                                 | Export Playwright trace on failure |
+It opens a timeline view where you can scrub through every action, network request, and DOM snapshot — really useful when debugging failures in CI.
 
 ---
 
-## 📊 Reports
+## Configuration
 
-### pytest-html (built-in)
-Generated automatically at `reports/report.html` on every `pytest` run.
+Copy `.env.example` to `.env` and edit as needed.
 
-### Allure (optional, richer UI)
-```bash
-# Install Allure CLI (once)
-# macOS:  brew install allure
-# Linux:  download from https://github.com/allure-framework/allure2/releases
-
-pytest --alluredir=reports/allure-results
-allure serve reports/allure-results
-```
-
----
-
-## 🧰 Tech Stack
-
-| Tool | Version | Role |
-|------|---------|------|
-| [Playwright for Python](https://playwright.dev/python/) | 1.44 | Browser automation |
-| [pytest](https://docs.pytest.org/) | 8.2 | Test runner + assertions |
-| [pytest-html](https://pytest-html.readthedocs.io/) | 4.1 | HTML report |
-| [allure-pytest](https://docs.qameta.io/allure/) | 2.13 | Rich Allure report |
-| [python-dotenv](https://saurabh-kumar.com/python-dotenv/) | 1.0 | `.env` loading |
-| [pytest-xdist](https://pytest-xdist.readthedocs.io/) | 3.5 | Parallel execution |
-| [pytest-rerunfailures](https://github.com/pytest-dev/pytest-rerunfailures) | 14.0 | Auto-retry flaky tests |
+| Variable | Default | What it does |
+|---|---|---|
+| `BASE_URL` | demo site URL | the login page to test against |
+| `VALID_USERNAME` | `student` | credential used in happy-path tests |
+| `VALID_PASSWORD` | `Password123` | credential used in happy-path tests |
+| `HEADLESS` | `true` | set to `false` to watch the browser |
+| `SLOW_MO` | `0` | milliseconds between actions (useful for demos) |
+| `BROWSER_TIMEOUT` | `30000` | global element timeout in ms |
+| `TRACE_ON_FAILURE` | `true` | export trace zip when a test fails |
 
 ---
 
-## 🤝 Contributing
+## Notes
 
-1. Fork the repo
-2. Create a feature branch (`git checkout -b feat/my-new-tests`)
-3. Follow the existing POM pattern — add locators to page objects, not tests
-4. Run the full suite before opening a PR (`pytest`)
-5. Open a Pull Request 🎉
-
----
-
-## 📄 License
-
-MIT © 2024 — free to use in portfolios and apprenticeship applications.
+- Each test gets a fresh browser context (isolated cookies + storage), so tests don't bleed into each other.
+- Locators live only in `pages/` — tests never touch CSS selectors directly.
+- The `logged_in_page` fixture handles login as a precondition so tests that need an authenticated state don't repeat the login steps.
