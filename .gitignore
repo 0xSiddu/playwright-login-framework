@@ -1,0 +1,45 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ── Virtual environment ───────────────────────────────────────────────────────
+venv/
+.venv/
+env/
+.env/
+
+# ── Secrets ───────────────────────────────────────────────────────────────────
+# Never commit real credentials — only commit .env.example
+.env
+
+# ── Test artefacts (large / generated) ───────────────────────────────────────
+reports/
+screenshots/
+
+# Keep the directories themselves in git
+!reports/.gitkeep
+!screenshots/.gitkeep
+
+# ── Playwright ────────────────────────────────────────────────────────────────
+playwright/.local-browsers/
+test-results/
+
+# ── IDE / OS noise ────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Coverage ──────────────────────────────────────────────────────────────────
+.coverage
+htmlcov/
+.pytest_cache/

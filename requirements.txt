@@ -1,0 +1,10 @@
+# ── Runtime dependencies ──────────────────────────────────────────────────────
+playwright==1.44.0
+pytest==8.2.2
+pytest-html==4.1.1
+allure-pytest==2.13.5
+python-dotenv==1.0.1
+
+# ── Optional / Dev tooling ────────────────────────────────────────────────────
+pytest-xdist==3.5.0        # parallel test execution: pytest -n auto
+pytest-rerunfailures==14.0 # auto-retry flaky tests: pytest --reruns 2
